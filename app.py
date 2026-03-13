@@ -11,6 +11,7 @@ from plotly.subplots import make_subplots
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
+DATASOURCES_PATH = DATA_DIR / "datasources.md"
 
 
 @st.cache_data
@@ -33,6 +34,11 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     shared["gold_return"] = shared["gold_price"].pct_change()
 
     return defense, gold, shared
+
+
+@st.cache_data
+def load_datasources() -> str:
+    return DATASOURCES_PATH.read_text(encoding="utf-8")
 
 
 def format_month(timestamp: pd.Timestamp) -> str:
@@ -182,6 +188,7 @@ def main() -> None:
     st.set_page_config(page_title="War and Gold", page_icon=":bar_chart:", layout="wide")
 
     defense, gold, shared = load_data()
+    datasources_markdown = load_datasources()
 
     st.title("War and Gold")
     st.caption("A Streamlit dashboard tracking the relationship between gold prices and the global defense industry.")
@@ -200,6 +207,8 @@ def main() -> None:
             format_func=format_month,
         )
         rolling_window = st.selectbox("Rolling correlation window", options=[3, 6, 12], index=1)
+        with st.expander("Data sources"):
+            st.markdown(datasources_markdown)
 
     filtered = shared.loc[
         (shared["Date"] >= selected_range[0]) & (shared["Date"] <= selected_range[1])
@@ -237,12 +246,12 @@ def main() -> None:
     left, right = st.columns((1.6, 1))
 
     with left:
-        st.plotly_chart(build_normalized_chart(filtered), use_container_width=True)
-        st.plotly_chart(build_absolute_chart(filtered), use_container_width=True)
+        st.plotly_chart(build_normalized_chart(filtered), width="stretch")
+        st.plotly_chart(build_absolute_chart(filtered), width="stretch")
 
     with right:
-        st.plotly_chart(build_rolling_correlation_chart(filtered, rolling_window), use_container_width=True)
-        st.plotly_chart(build_returns_scatter(filtered), use_container_width=True)
+        st.plotly_chart(build_rolling_correlation_chart(filtered, rolling_window), width="stretch")
+        st.plotly_chart(build_returns_scatter(filtered), width="stretch")
 
     st.subheader("Underlying monthly data")
     st.dataframe(
@@ -267,7 +276,7 @@ def main() -> None:
                 "Gold monthly return",
             ]
         ],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
